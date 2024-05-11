@@ -43,7 +43,7 @@ func (r *Record) String() string {
 
 type Writer interface {
 	Init() error
-	Writer(*Record) error
+	Write(*Record) error
 }
 
 type Rotater interface {
@@ -160,7 +160,7 @@ func bootstrapLogWriter(logger *Logger) {
 	}
 
 	for _, writer := range logger.writers {
-		if err := writer.Writer(r); err != nil {
+		if err := writer.Write(r); err != nil {
 			log.Println(err)
 		}
 	}
@@ -175,7 +175,7 @@ func bootstrapLogWriter(logger *Logger) {
 				return
 			}
 			for _, writer := range logger.writers {
-				if err := writer.Writer(r); err != nil {
+				if err := writer.Write(r); err != nil {
 					log.Println(err)
 				}
 			}
