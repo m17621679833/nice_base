@@ -3,8 +3,10 @@ module github.com/m17621679833/nice_base
 go 1.21.5
 
 require (
+	github.com/garyburd/redigo v1.6.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/spf13/viper v1.18.2
+	gorm.io/driver/mysql v1.5.6
 	gorm.io/gorm v1.25.10
 )
 
@@ -19,6 +21,7 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.20.0 // indirect
+	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect

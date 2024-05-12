@@ -226,7 +226,7 @@ func InitBaseConf(path string) error {
 	if confBase.Log.Level == "" {
 		confBase.Log.Level = "trace"
 	}
-	logConfig := nlog.LogConfig{
+	logConfig := &nlog.LogConfig{
 		LogLevel: confBase.Log.Level,
 		FileWriter: nlog.FileWriterConf{
 			On:              confBase.Log.FW.On,
@@ -297,7 +297,7 @@ func ParseConfig(path string, conf interface{}) error {
 	v.SetConfigType("toml")
 	v.ReadConfig(bytes.NewBuffer(data))
 	if err = v.Unmarshal(conf); err != nil {
-		return fmt.Errorf("unmarshal error %v\n", string(data), err)
+		return fmt.Errorf("unmarshal %v error %v\n", string(data), err)
 	}
 	return nil
 }

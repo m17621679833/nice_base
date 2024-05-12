@@ -21,7 +21,7 @@ type LogConfig struct {
 	ConsoleWriter ConsoleWriterConf `toml:"ConsoleWriter"`
 }
 
-func SetupLogInstanceWithConf(lc LogConfig, logger *Logger) (err error) {
+func SetupLogInstanceWithConf(lc *LogConfig, logger *Logger) (err error) {
 	if lc.FileWriter.On {
 		if len(lc.FileWriter.LogPath) > 0 {
 			w := NewLogWriter()
@@ -76,7 +76,7 @@ func SetupLogInstanceWithConf(lc LogConfig, logger *Logger) (err error) {
 	return
 }
 
-func SetupDefaultLogWithConf(lc LogConfig) (err error) {
+func SetupDefaultLogWithConf(lc *LogConfig) (err error) {
 	InitDefaultLogger()
 	return SetupLogInstanceWithConf(lc, defaultLogger)
 }

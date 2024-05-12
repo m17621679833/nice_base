@@ -16,7 +16,7 @@ var (
 
 var (
 	defaultLogger *Logger
-	taskUp        = false
+	takeUp        = false
 )
 
 const (
@@ -124,12 +124,10 @@ func (logger *Logger) dispatchRecordToTunnel(level int, format string, args ...i
 	} else {
 		inf = fmt.Sprint(args...)
 	}
-
 	_, file, line, ok := runtime.Caller(2)
 	if ok {
 		code = path.Base(file) + ":" + strconv.Itoa(line)
 	}
-
 	now := time.Now()
 	if now.Unix() != logger.lastTime {
 		logger.lastTime = now.Unix()
@@ -140,7 +138,6 @@ func (logger *Logger) dispatchRecordToTunnel(level int, format string, args ...i
 	record.code = code
 	record.time = logger.lastTimeStr
 	record.level = level
-
 	logger.tunnel <- record
 }
 
@@ -203,8 +200,8 @@ func bootstrapLogWriter(logger *Logger) {
 }
 
 func NewLogger() *Logger {
-	if defaultLogger != nil && taskUp == false {
-		taskUp = true
+	if defaultLogger != nil && takeUp == false {
+		takeUp = true
 		return defaultLogger
 	}
 	logger := new(Logger)
@@ -212,7 +209,8 @@ func NewLogger() *Logger {
 	logger.tunnel = make(chan *Record, TUNNEL_DEFAULT_SIZE)
 	logger.c = make(chan bool, 2)
 	logger.level = DEBUG
-	logger.layout = "2024/05/10 10:39:00"
+	logger.layout = "2006/01/02 15:04:05"
+
 	logger.recordPool = &sync.Pool{
 		New: func() interface{} { return &Record{} },
 	}
@@ -221,7 +219,7 @@ func NewLogger() *Logger {
 }
 
 func InitDefaultLogger() {
-	if taskUp == false {
+	if takeUp == false {
 		defaultLogger = NewLogger()
 	}
 }
@@ -271,8 +269,7 @@ func Register(writer Writer) {
 }
 
 func Close() {
-	InitDefaultLogger()
 	defaultLogger.Close()
 	defaultLogger = nil
-	taskUp = false
+	takeUp = false
 }
