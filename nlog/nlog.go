@@ -88,6 +88,7 @@ func (logger *Logger) Trace(fmt string, args ...interface{}) {
 func (logger *Logger) Debug(fmt string, args ...interface{}) {
 	logger.dispatchRecordToTunnel(DEBUG, fmt, args...)
 }
+
 func (logger *Logger) Info(fmt string, args ...interface{}) {
 	logger.dispatchRecordToTunnel(INFO, fmt, args...)
 }

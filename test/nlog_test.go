@@ -23,7 +23,10 @@ func TestNLog(t *testing.T) {
 		},
 	}
 	nlog.SetupLogInstanceWithConf(config, logger)
-	logger.Error("error message")
+
+	time.Sleep(12 * time.Second)
+
+	logger.Error("2error message")
 	logger.Close()
-	time.Sleep(10 * time.Second)
+	time.Sleep(60 * time.Second)
 }

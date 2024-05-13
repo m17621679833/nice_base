@@ -50,7 +50,6 @@ func (logWriter *LogWriter) SetPathPattern(pattern string) error {
 			n++
 		}
 	}
-
 	if n == 0 {
 		logWriter.pathFmt = pattern
 		return nil
