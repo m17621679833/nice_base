@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 	"io"
 	"io/ioutil"
+	"net"
 	"os"
 	"strings"
 	"time"
@@ -24,6 +25,10 @@ var ConfRedisMap *RedisConfMap
 var ViperConfMap map[string]*viper.Viper
 var ConfEnvPath string
 var ConfEnv string
+var TimeLocation *time.Location
+var TimeFormat = "2024-05-11 10:32:00"
+var DateFormat = "2024-05-11"
+var LocalIP = net.ParseIP("127.0.0.1")
 
 type LogConfFileWriter struct {
 	On              bool   `mapstructure:"on"`
@@ -209,7 +214,7 @@ func InitBaseConf(path string) error {
 	if err != nil {
 		return err
 	}
-	if ConfBase.DebugMode == "" {
+	if confBase.DebugMode == "" {
 		if confBase.Base.DebugMode != "" {
 			confBase.DebugMode = confBase.Base.DebugMode
 		} else {
@@ -220,7 +225,7 @@ func InitBaseConf(path string) error {
 		if confBase.Base.TimeLocation != "" {
 			confBase.TimeLocation = confBase.Base.TimeLocation
 		} else {
-			confBase.TimeLocation = "Asia/Chongqing"
+			confBase.TimeLocation = "Asia/Shanghai"
 		}
 	}
 	if confBase.Log.Level == "" {
@@ -245,6 +250,7 @@ func InitBaseConf(path string) error {
 		panic(err)
 	}
 	nlog.SetLayout("2024-05-10T15:21:23.000")
+	ConfBase = confBase
 	return nil
 }
 
@@ -300,4 +306,8 @@ func ParseConfig(path string, conf interface{}) error {
 		return fmt.Errorf("unmarshal %v error %v\n", string(data), err)
 	}
 	return nil
+}
+
+func GetConfEnv() string {
+	return ConfEnv
 }

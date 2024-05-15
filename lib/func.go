@@ -4,17 +4,85 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
+	"flag"
 	"fmt"
+	"log"
 	"math/rand"
 	"net"
 	"os"
+	"strings"
 	"time"
 )
 
-var TimeLocation *time.Location
-var TimeFormat = "2024-05-11 10:32:00"
-var DateFormat = "2024-05-11"
-var LocalIP = net.ParseIP("127.0.0.1")
+func Init(configPath string) error {
+	return InitModule(configPath, []string{"base", "mysql", "redis"})
+}
+
+func InitModule(configPath string, modules []string) error {
+	conf := flag.String("config", configPath, "input config file like ./conf/dev/")
+	flag.Parse()
+	if *conf == "" {
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	log.Println("-------------------------------------------------")
+	log.Printf("[INFO] config=%s\n", *conf)
+	log.Printf("[INFO]%s\n", "start loading resources.")
+	ips := GetLocalIPs()
+	if len(ips) > 0 {
+		LocalIP = ips[0]
+	}
+	if err := ParseConfigPath(*conf); err != nil {
+		return err
+	}
+
+	if err := InitViperConf(); err != nil {
+		return err
+	}
+
+	if InArrayString("base", modules) {
+		if err := InitBaseConf(GetConfPath("base")); err != nil {
+			fmt.Printf("[ERROR] %s%s\n", time.Now().Format(TimeFormat), " Init base conf:"+err.Error())
+		}
+	}
+
+	if InArrayString("redis", modules) {
+		if err := InitRedisConf(GetConfPath("redis_map")); err != nil {
+			fmt.Printf("[ERROR] %s%s\n", time.Now().Format(TimeFormat), " Init redis conf:"+err.Error())
+		}
+	}
+
+	if InArrayString("mysql", modules) {
+		if err := InitDBPool(GetConfPath("mysql_map")); err != nil {
+			fmt.Printf("[ERROR]%s%s\n", time.Now().Format(TimeFormat), "Init mysql conf:"+err.Error())
+		}
+	}
+
+	if location, err := time.LoadLocation(ConfBase.TimeLocation); err != nil {
+		return err
+	} else {
+		TimeLocation = location
+	}
+
+	log.Printf("[INFO] %s\n", " success loading resources.")
+	log.Println("------------------------------------------------------------------------")
+	return nil
+}
+
+func GetConfPath(fileName string) string {
+	return ConfEnvPath + "/" + fileName + ".toml"
+}
+
+/*
+./conf/dev/
+*/
+func ParseConfigPath(config string) error {
+	path := strings.Split(config, "/")
+	ConfEnvPath = strings.Join(path[:len(path)-1], "/")
+	ConfEnv = path[len(path)-2]
+	return nil
+}
 
 func NewTrace() *TraceContext {
 	trace := &TraceContext{}
