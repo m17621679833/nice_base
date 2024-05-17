@@ -311,3 +311,16 @@ func ParseConfig(path string, conf interface{}) error {
 func GetConfEnv() string {
 	return ConfEnv
 }
+
+func ParseLocalConfig(fileName string, conf interface{}) error {
+	path := GetConfFilePath(fileName)
+	err := ParseConfig(path, conf)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetConfFilePath(fileName string) string {
+	return ConfEnvPath + "/" + fileName
+}

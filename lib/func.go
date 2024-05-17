@@ -6,9 +6,13 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"github.com/m17621679833/nice_base/nlog"
+	"io"
 	"log"
 	"math/rand"
 	"net"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -151,6 +155,14 @@ func InArrayString(s string, arr []string) bool {
 	return false
 }
 
+func Destroy() {
+	log.Println("------------------------------------------------------------------------")
+	log.Printf("[INFO] %s\n", " start destroy resources.")
+	CloseDB()
+	nlog.Close()
+	log.Printf("[INFO] %s\n", " success destroy resources.")
+}
+
 func Substr(str string, start int64, end int64) string {
 	length := int64(len(str))
 	if start < 0 || start > length {
@@ -160,4 +172,170 @@ func Substr(str string, start int64, end int64) string {
 		end = length
 	}
 	return string(str[start:end])
+}
+
+func HttpGet(trace *TraceContext, urlString string, urlParams url.Values, msTimeout int, header http.Header) (*http.Response, []byte, error) {
+	startTime := time.Now().UnixNano()
+	client := http.Client{Timeout: time.Duration(msTimeout) * time.Millisecond}
+	urlString = AddGetDataToUrl(urlString, urlParams)
+	req, err := http.NewRequest("GET", urlString, nil)
+	if err != nil {
+		Log.TagWarn(trace, NLTagHTTPFailed, map[string]interface{}{
+			"url":       urlString,
+			"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
+			"method":    "GET",
+			"args":      urlParams,
+			"err":       err.Error(),
+		})
+		return nil, nil, err
+	}
+	if len(header) > 0 {
+		req.Header = header
+	}
+	req = addTrace2Header(req, trace)
+	response, err := client.Do(req)
+	if err != nil {
+		Log.TagWarn(trace, NLTagHTTPFailed, map[string]interface{}{
+			"url":       urlString,
+			"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
+			"method":    "GET",
+			"args":      urlParams,
+			"err":       err.Error(),
+		})
+		return nil, nil, err
+	}
+	defer response.Body.Close()
+	data, err := io.ReadAll(response.Body)
+	if err != nil {
+		Log.TagWarn(trace, NLTagHTTPFailed, map[string]interface{}{
+			"url":       urlString,
+			"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
+			"method":    "GET",
+			"args":      urlParams,
+			"err":       err.Error(),
+		})
+		return nil, nil, err
+	}
+	Log.TagInfo(trace, NLTagHTTPSuccess, map[string]interface{}{
+		"url":       urlString,
+		"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
+		"method":    "GET",
+		"args":      urlParams,
+		"result":    Substr(string(data), 0, 1024),
+	})
+	return response, data, nil
+}
+
+func HttpPost(trace *TraceContext, urlString string, urlParams url.Values, msTimeout int, header http.Header, contextType string) (*http.Response, []byte, error) {
+	startTime := time.Now().UnixNano()
+	client := http.Client{
+		Timeout: time.Duration(msTimeout) * time.Millisecond,
+	}
+	if contextType == "" {
+		contextType = "application/x-www-form-urlencoded"
+	}
+	urlParamEncode := urlParams.Encode()
+	request, err := http.NewRequest("POST", urlString, strings.NewReader(urlParamEncode))
+	if len(request.Header) > 0 {
+		request.Header = header
+	}
+	request = addTrace2Header(request, trace)
+	request.Header.Set("Content-Type", contextType)
+	resp, err := client.Do(request)
+	if err != nil {
+		Log.TagWarn(trace, NLTagHTTPFailed, map[string]interface{}{
+			"url":       urlString,
+			"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
+			"method":    "POST",
+			"args":      Substr(urlParamEncode, 0, 1024),
+			"err":       err.Error(),
+		})
+		return nil, nil, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		Log.TagWarn(trace, NLTagHTTPFailed, map[string]interface{}{
+			"url":       urlString,
+			"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
+			"method":    "POST",
+			"args":      Substr(urlParamEncode, 0, 1024),
+			"err":       err.Error(),
+		})
+	}
+	Log.TagInfo(trace, NLTagHTTPSuccess, map[string]interface{}{
+		"url":       urlString,
+		"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
+		"method":    "POST",
+		"args":      Substr(urlParamEncode, 0, 1024),
+		"result":    Substr(string(body), 0, 1024),
+	})
+	return resp, body, nil
+}
+
+func HttpJson(trace *TraceContext, urlStrings string, jsonContent string, msTimeout int, header http.Header) (*http.Response, []byte, error) {
+	startTime := time.Now().UnixNano()
+	client := http.Client{
+		Timeout: time.Duration(msTimeout) * time.Millisecond,
+	}
+	req, err := http.NewRequest("POST", urlStrings, strings.NewReader(jsonContent))
+	if len(header) > 0 {
+		req.Header = header
+	}
+	req = addTrace2Header(req, trace)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		Log.TagWarn(trace, NLTagHTTPFailed, map[string]interface{}{
+			"url":       urlStrings,
+			"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
+			"method":    "POST",
+			"args":      Substr(jsonContent, 0, 1924),
+			"err":       err.Error(),
+		})
+		return nil, nil, err
+	}
+	defer resp.Body.Close()
+	ret, err := io.ReadAll(resp.Body)
+	if err != nil {
+		Log.TagWarn(trace, NLTagHTTPFailed, map[string]interface{}{
+			"url":       urlStrings,
+			"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
+			"method":    "POST",
+			"args":      Substr(jsonContent, 0, 1024),
+			"err":       err.Error(),
+		})
+		return nil, nil, err
+	}
+	Log.TagInfo(trace, NLTagHTTPSuccess, map[string]interface{}{
+		"url":       urlStrings,
+		"proc_time": float32(time.Now().UnixNano()-startTime) / 1.0e9,
+		"method":    "POST",
+		"args":      Substr(jsonContent, 0, 1024),
+		"result":    Substr(string(ret), 0, 1024),
+	})
+	return resp, ret, nil
+
+}
+
+func addTrace2Header(req *http.Request, trace *TraceContext) *http.Request {
+	traceId := trace.TraceId
+	cSpanId := NewSpanId()
+	if traceId != "" {
+		req.Header.Set("nice-header-rid", traceId)
+	}
+	if cSpanId != "" {
+		req.Header.Set("nice-header-spanid", cSpanId)
+	}
+	trace.SpanId = cSpanId
+	return req
+}
+
+func AddGetDataToUrl(urlString string, params url.Values) string {
+	if strings.Contains(urlString, "?") {
+		urlString += "&"
+	} else {
+		urlString += "?"
+	}
+	return fmt.Sprintf("%s%s", urlString, params.Encode())
 }

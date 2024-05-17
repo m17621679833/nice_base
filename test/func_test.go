@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"sync"
 	"testing"
 	"time"
@@ -31,6 +32,16 @@ func Test_GetConfEnv(t *testing.T) {
 	fmt.Println(lib.GetConfEnv())
 }
 
+func Test_ParseLocalConfig(t *testing.T) {
+	SetUp()
+	conf := &HttpConf{}
+	err := lib.ParseLocalConfig("test.toml", conf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(conf)
+	//TearDown()
+}
 func SetUp() {
 	initOnce.Do(func() {
 		err := lib.InitModule("../conf/dev/", []string{"base", "mysql", "redis"})
@@ -41,12 +52,11 @@ func SetUp() {
 }
 
 func TearDown() {
-
+	lib.Destroy()
 }
 
 func TestFunc(t *testing.T) {
 	InitTestServer()
-
 }
 
 func InitTestServer() {
@@ -57,7 +67,7 @@ func InitTestServer() {
 				log.Fatal(err)
 			}
 			request.Body = io.NopCloser(bytes.NewBuffer(data))
-			writer.Write([]byte(data))
+			writer.Write(data)
 		})
 	})
 
@@ -77,5 +87,29 @@ func InitTestServer() {
 		http.ListenAndServe(addr, nil)
 
 	}()
-	time.Sleep(time.Second * 200)
+	time.Sleep(time.Second * 1)
+}
+
+func TestGet(t *testing.T) {
+	InitTestServer()
+	a := url.Values{
+		"city_id": {"12"},
+	}
+	url := "http://" + addr + "/get"
+	_, i, err := lib.HttpGet(lib.NewTrace(), url, a, 1000, nil)
+	fmt.Println("city_id=" + string(i))
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+}
+
+func TestJson(t *testing.T) {
+	InitTestServer()
+	jsonStr := "{\"source\":\"control\",\"cityId\":\"12\",\"trailNum\":10,\"dayTime\":\"2018-11-21 16:08:00\",\"limit\":2,\"andOperations\":{\"cityId\":\"eq\",\"trailNum\":\"gt\",\"dayTime\":\"eq\"}}"
+	url := "http://" + addr + "/postjson"
+	_, i, err := lib.HttpJson(lib.NewTrace(), url, jsonStr, 1000, nil)
+	fmt.Println(string(i))
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 }
