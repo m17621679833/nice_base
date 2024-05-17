@@ -159,7 +159,7 @@ func CloseDB() error {
 	return nil
 }
 
-func DBPoolLogQuery(trace *TraceContext, sqlDB sql.DB, query string, args ...interface{}) (*sql.Rows, error) {
+func DBPoolLogQuery(trace *TraceContext, sqlDB *sql.DB, query string, args ...interface{}) (*sql.Rows, error) {
 	start := time.Now()
 	rows, err := sqlDB.Query(query, args...)
 	end := time.Now()

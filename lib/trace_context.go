@@ -51,3 +51,10 @@ func GetTraceContext(ctx context.Context) *TraceContext {
 
 	return NewTrace()
 }
+
+func SetTraceContext(ctx context.Context, trace *TraceContext) context.Context {
+	if trace == nil {
+		return ctx
+	}
+	return context.WithValue(ctx, "trace", trace)
+}

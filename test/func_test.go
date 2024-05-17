@@ -34,7 +34,7 @@ func Test_GetConfEnv(t *testing.T) {
 
 func Test_ParseLocalConfig(t *testing.T) {
 	SetUp()
-	conf := &HttpConf{}
+	conf := HttpConf{}
 	err := lib.ParseLocalConfig("test.toml", conf)
 	if err != nil {
 		t.Fatal(err)

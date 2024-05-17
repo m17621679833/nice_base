@@ -17,5 +17,6 @@ func TestGetTraceContext(t *testing.T) {
 	context := &gin.Context{}
 	lib.SetGinTraceContext(context, trace)
 	traceContext := lib.GetTraceContext(context)
+
 	t.Log(traceContext)
 }

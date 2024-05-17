@@ -48,7 +48,7 @@ func RedisConnFactory(name string) (redis.Conn, error) {
 	return nil, errors.New("create redis conn fail")
 }
 
-func RedisLogDo(trace *TraceContext, c redis.Conn, commandName string, args ...interface{}) {
+func RedisLogDo(trace *TraceContext, c redis.Conn, commandName string, args ...interface{}) (interface{}, error) {
 	start := time.Now()
 	reply, err := c.Do(commandName, args...)
 	end := time.Now()
@@ -68,6 +68,7 @@ func RedisLogDo(trace *TraceContext, c redis.Conn, commandName string, args ...i
 			"proc_time": fmt.Sprintf("%fs", end.Sub(start).Seconds()),
 		})
 	}
+	return reply, err
 }
 func RedisConfDo(trace *TraceContext, name string, commandName string, args ...interface{}) (interface{}, error) {
 	c, err := RedisConnFactory(name)
