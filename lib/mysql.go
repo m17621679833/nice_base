@@ -125,12 +125,7 @@ func (m MysqlGormLogger) Trace(ctx context.Context, begin time.Time, fc func() (
 	switch {
 	case err != nil && m.LogLevel >= logger.Error && (!errors.Is(err, logger.ErrRecordNotFound)):
 		msg["err"] = err
-		if rows == -1 {
-			Log.TagInfo(traceContext, "_com_mysql_failure", msg)
-		} else {
-			msg["rows"] = rows
-			Log.TagInfo(traceContext, "_com_mysql_failure", msg)
-		}
+		Log.TagError(traceContext, "_com_mysql_failure", msg)
 	case since > m.SlowThreshold && m.SlowThreshold != 0 && m.LogLevel >= logger.Warn:
 		slowLog := fmt.Sprintf("SLOW SQL>=%v", m.SlowThreshold)
 		msg["slowLog"] = slowLog
